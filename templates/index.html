@@ -1,44 +1,88 @@
+{% extends 'base.html' %}
 
-<!-- html file template that will be modified to meet the desired output-->
-<!-- file objective: the file should contain a button to load one or a folder of images-->
-<!-- the file should have a place to display the dataframe result of the results from SAM -->
-<!-- Script owner: Tchako Bryan (PGE 4) -->
-<!-- Collaborator: Adetutu (PGE 5) -->
-<!-- Collaborator: Daniella (PGE 4) -->
-<!-- script date creation: 23/05/2023 -->
+{% block title %} QC - Void Detection {% endblock %}
 
-<!DOCTYPE html>
-<html >
-<!--From https://codepen.io/frytyler/pen/EGdtg-->
-<head>
-  <meta charset="UTF-8">
-  <title>ML API</title>
-  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Hind:300' rel='stylesheet' type='text/css'>
-<link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+{% block content %}
+  <form method="POST" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+    <!-- Input images -->
+    <div>
+      <input type="file" id="image_uploads" name="images" accept=".jpg, .jpeg, .png" multiple>
+      <p id="preview">No files currently selected for upload</p>
+    </div>
+
+    <!-- Detection with YOLO -->
+    <div>
+      <button type="submit" name="action" value="detection">Detect with YOLO</button>
+      {% for detection in detections %}
+        <img src="data:image/jpeg;base64,{{ detection }}" width="400">
+        <hr>
+      {% endfor %}
+      <br><br>
+    </div>
   
-</head>
+    <!-- Segmentation with SAM -->
+    <div>
+      <button type="submit" name="action" value="segmentation">Segment with SAM</button>
+      {% for mask in masks %}
+        <img src="data:image/jpeg;base64,{{ mask }}" width="400">
+        <hr>
+      {% endfor %}
+      <br><br>
+    </div>
+  
+    <!-- Report generation -->
+    <div>
+      <button type="submit" name="action" value="report">CSV report</button>
+      {{ report }}
+      <br><br>
+    </div>
+  </form>
+{% endblock %}
 
-<body>
- <div class="login">
-	<h1>Predict Salary Analysis</h1>
+{% block script %}
+<script>
+  // Accessing the HTML (DOM) elements ()
+  const image_uploads = document.getElementById('image_uploads'); // the input images button
+  const preview = document.getElementById('preview'); // the text field below the input button
+  image_uploads.addEventListener('change', updateImageLoading); // run updateImageLoading each time images are uploaded (the change event) 
 
-     <!-- Main Input For Receiving Query to our ML -->
-    <form action="{{ url_for('predict')}}"method="post">
-    	<input type="text" name="experience" placeholder="Experience" required="required" />
-        <input type="text" name="test_score" placeholder="Test Score" required="required" />
-		<input type="text" name="interview_score" placeholder="Interview Score" required="required" />
+  function updateImageLoading() {
+    // Delete everything written in the text field below the input images button
+    while(preview.firstChild) {
+      preview.removeChild(preview.firstChild);
+    }
 
-        <button type="submit" class="btn btn-primary btn-block btn-large">Predict</button>
-    </form>
+    // Get the read images
+    const curFiles = image_uploads.files;
+    
+    if(curFiles.length === 0) {
+      const para = document.createElement('p');
+      para.textContent = 'No files currently selected for upload'; // print this when there're no files
+      preview.appendChild(para);
+    } else {
+      const list = document.createElement('ol'); // otherwise, create an ordered list to display the file names
+      preview.appendChild(list);
 
-   <br>
-   <br>
-   {{ prediction_text }}
+      for(const file of curFiles) {
+        const listItem = document.createElement('li');
+        const para = document.createElement('p');
 
- </div>
+        if(validFileType(file)) {
+          para.textContent = file.name; // only if the file format is valid (.jpg, .png)
+        } else {
+          para.textContent = `${file.name}: Not a valid file type. Update your selection.`;
+        }
+        listItem.appendChild(para);
+        list.appendChild(listItem);
+      }
+    }
+  }
 
+  const fileTypes = ['image/jpeg', 'image/png']; // .jpg and .png are the supported extensions. Errors may occur (with opencv) if you modify it.
 
-</body>
-</html>
+  //  This function detect if an input is valid or not
+  function validFileType(file) {
+    return fileTypes.includes(file.type);
+  }
+</script>
+{% endblock %}
