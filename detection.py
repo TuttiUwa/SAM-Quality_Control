@@ -7,7 +7,7 @@ def detection(images):
   model = YOLO('model/yolo.pt')
 
   # Getting only the boxes from a batch detected output
-  xyxy = lambda x: x.boxes.xyxy.cpu().numpy().tolist()
+  xyxy = lambda x: x.boxes.xyxy.numpy().tolist()
 
   # Components bounding boxes
   components = model(images, classes=0)

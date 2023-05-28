@@ -14,8 +14,10 @@
     <div>
       <button type="submit" name="action" value="detection">Detect with YOLO</button>
       {% for detection in detections %}
+      <div>
         <img src="data:image/jpeg;base64,{{ detection }}" width="400">
         <hr>
+      </div>
       {% endfor %}
       <br><br>
     </div>
@@ -24,16 +26,40 @@
     <div>
       <button type="submit" name="action" value="segmentation">Segment with SAM</button>
       {% for mask in masks %}
+      <div>
         <img src="data:image/jpeg;base64,{{ mask }}" width="400">
         <hr>
+      </div>
       {% endfor %}
       <br><br>
     </div>
   
     <!-- Report generation -->
     <div>
-      <button type="submit" name="action" value="report">CSV report</button>
-      {{ report }}
+      <button type="submit" name="action" value="report">Report</button>
+      <div>
+        <table>
+          <tr>
+            <th>Image</th>
+            <th>Component</th>
+            <th>Area</th>
+            <th>Void %</th>
+            <th>Max void %</th>
+          </tr>
+          {% for image in summary %}
+          {% for component in summary[image] %}
+          <tr>
+            <td>{{ image }}</td>
+            <td>{{ component }}</td>
+            <td>{{ summary[image][component]['component_area'] }}</td>
+            <td>0</td>
+            <td>0</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      {{ summary }}
+      </div>
       <br><br>
     </div>
   </form>

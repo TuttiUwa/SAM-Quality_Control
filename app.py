@@ -44,6 +44,7 @@ def predict():
     # Segmentation with SAM
     if action == 'segmentation':
       _, masks = segmentation(images)
+      masks = encoder(masks)
       return render_template('index.html', masks=masks)
     
     # Report generation
