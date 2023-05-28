@@ -64,7 +64,7 @@ def segmentation(images):
 
   # Generate the report directly, or a sub-report (actually we only store all the voids instead of calculating the metrics)
   print('Creating the report')
-  report = {i: {k: {'component_area': 0, 'voids': []} for k in components_indices[i]} for i in range(len(images))}
+  report = {i: {k: {'component_area': 0, 'voids': [], 'void_pct': 0, 'max_void_pct': 0} for k in components_indices[i]} for i in range(len(images))}
   print('Empty report:', report)
 
   if len(input) > 0:
@@ -95,11 +95,18 @@ def segmentation(images):
             print('\t', j, 'is void')
             color = np.array([255/255, 30/255, 14/255, .8]) # red for the voids
             jj = np.where(np.array(components_indices[i]) < j)[0][-1]
+            jj = components_indices[i][jj]
             report[i][jj]['voids'].append(mask.sum()) # Appending to the existing array
           mask = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
           print('\tMask shape', mask.shape)
-          segmented_image[mask.sum(axis=2) > 0] = mask[mask.sum(axis=2) > 0]
+          print('nMask:\n', sum(mask.sum(axis=2) > 0))
+          print('\nColors:\n', mask[mask.sum(axis=2) > 0])
+          segmented_image[mask.sum(axis=2) > 0] = mask[mask.sum(axis=2) > 0].copy()
           print('\tSegmented image', segmented_image.shape)
+        
+        for k in components_indices[i]:
+          report[i][k]['void_pct'] = round(sum(report[i][k]['voids'])*100 / report[i][k]['component_area'], 2)
+          report[i][k]['max_void_pct'] = round(max(report[i][k]['voids'])*100 / report[i][k]['component_area'], 2) if report[i][k]['void_pct'] != 0 else 0
 
       segmented_images.append(segmented_image)
       print('Segmented image added, total =', len(segmented_images))

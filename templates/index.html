@@ -3,64 +3,99 @@
 {% block title %} QC - Void Detection {% endblock %}
 
 {% block content %}
-  <form method="POST" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+  <form method="POST" action="{{ url_for('predict') }}" enctype="multipart/form-data" class="pt-2">
     <!-- Input images -->
-    <div>
-      <input type="file" id="image_uploads" name="images" accept=".jpg, .jpeg, .png" multiple>
+    <div class="container">
+      <label for="image_uploads" class="form-label">Load images</label>
+      <input class="form-control w-25" type="file" id="image_uploads" name="images" accept=".jpg, .jpeg, .png" multiple>
       <p id="preview">No files currently selected for upload</p>
     </div>
 
+    <hr>
+
     <!-- Detection with YOLO -->
-    <div>
-      <button type="submit" name="action" value="detection">Detect with YOLO</button>
-      {% for detection in detections %}
-      <div>
-        <img src="data:image/jpeg;base64,{{ detection }}" width="400">
-        <hr>
+    <div class="container">
+      <div class="row">
+        <div class="col-2">
+          <button class="btn btn-primary disabled" type="submit" name="action" value="detection" id="detection" style="width: 175px">Detect with YOLO</button>
+        </div>
+        <div class="col-2 form-check form-switch d-flex align-items-center">
+          <input class="form-check-input me-2" type="check  box" role="switch" id="labels" name="labels">
+          <label class="form-check-label pt-1" for="labels">Labels</label>
+        </div>
+        <div class="col-2 form-check form-switch d-flex align-items-center">
+          <input class="form-check-input me-2" type="checkbox" role="switch" id="conf" name="conf">
+          <label class="form-check-label pt-1" for="conf">Confidence level</label>
+        </div>
+        <div class="col-2 d-flex align-items-center">
+          <label for="fontsize" class="form-label me-2 pt-2">Font size</label>
+          <input type="range" class="form-range w-50 mt-1" name="fontsize" min="6" max="12" value="8" id="fontsize">
+        </div>
+        <div class="col-2 d-flex align-items-center">
+          <label for="lw" class="form-label me-2 pt-2">Line width</label>
+          <input type="range" class="form-range w-50 mt-1" name="lw" min="1" max="3" value="1" id="lw">
+        </div>
       </div>
-      {% endfor %}
-      <br><br>
+      <div class="row row-cols-3">
+        {% for detection in detections %}
+        <div class="col p-4">
+          <img src="data:image/jpeg;base64,{{ detection }}" class="w-75 mx-auto">
+        </div>
+        {% endfor %}
+      </div>
     </div>
-  
+
+    <hr>
+    
     <!-- Segmentation with SAM -->
-    <div>
-      <button type="submit" name="action" value="segmentation">Segment with SAM</button>
-      {% for mask in masks %}
-      <div>
-        <img src="data:image/jpeg;base64,{{ mask }}" width="400">
-        <hr>
+    <div class="container">
+      <div class="col-2">
+        <button class="btn btn-primary disabled" type="submit" name="action" value="segmentation" id="segmentation" style="width: 175px">Segment with SAM</button>
       </div>
-      {% endfor %}
-      <br><br>
+      <div class="row row-cols-3">
+        {% for mask in masks %}
+        <div class="col p-4">
+          <img src="data:image/jpeg;base64,{{ mask }}" class="w-75 mx-auto">
+        </div>
+        {% endfor %}
+      </div>
     </div>
+
+    <hr>
   
     <!-- Report generation -->
-    <div>
-      <button type="submit" name="action" value="report">Report</button>
-      <div>
-        <table>
+    <div class="container">
+      <div class="col-2">
+        <button class="btn btn-primary disabled" type="submit" name="action" value="report" id="report" style="width: 175px">Generate report</button>
+      </div>  
+      {% if summary | length > 0 %}
+      <table class="table table-striped">
+        <thead>
           <tr>
-            <th>Image</th>
-            <th>Component</th>
-            <th>Area</th>
-            <th>Void %</th>
-            <th>Max void %</th>
+            <th scope="col">#</th>
+            <th scope="col">Image</th>
+            <th scope="col">Component</th>
+            <th scope="col">Area</th>
+            <th scope="col">Void %</th>
+            <th scope="col">Max Void %</th>
           </tr>
+        </thead>
+        <tbody>
           {% for image in summary %}
           {% for component in summary[image] %}
           <tr>
+            <th scope="row">1</th>
             <td>{{ image }}</td>
             <td>{{ component }}</td>
             <td>{{ summary[image][component]['component_area'] }}</td>
-            <td>0</td>
-            <td>0</td>
+            <td>{{ summary[image][component]['void_pct'] }}</td>
+            <td>{{ summary[image][component]['max_void_pct'] }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
-        </table>
-      {{ summary }}
-      </div>
-      <br><br>
+        </tbody>
+      </table>
+      {% endif %}
     </div>
   </form>
 {% endblock %}
@@ -70,7 +105,11 @@
   // Accessing the HTML (DOM) elements ()
   const image_uploads = document.getElementById('image_uploads'); // the input images button
   const preview = document.getElementById('preview'); // the text field below the input button
-  image_uploads.addEventListener('change', updateImageLoading); // run updateImageLoading each time images are uploaded (the change event) 
+  image_uploads.addEventListener('change', updateImageLoading); // run updateImageLoading each time images are uploaded (the change event)
+
+  const detection = document.getElementById('detection');
+  const segmentation = document.getElementById('segmentation');
+  const report = document.getElementById('report');
 
   function updateImageLoading() {
     // Delete everything written in the text field below the input images button
@@ -85,6 +124,10 @@
       const para = document.createElement('p');
       para.textContent = 'No files currently selected for upload'; // print this when there're no files
       preview.appendChild(para);
+
+      if (!detection.classList.contains('disabled')) detection.classList.add('disabled');
+      if (!segmentation.classList.contains('disabled')) segmentation.classList.add('disabled');
+      if (!report.classList.contains('disabled')) report.classList.add('disabled');
     } else {
       const list = document.createElement('ol'); // otherwise, create an ordered list to display the file names
       preview.appendChild(list);
@@ -101,6 +144,12 @@
         listItem.appendChild(para);
         list.appendChild(listItem);
       }
+
+      if (detection.classList.contains('disabled')) detection.classList.remove('disabled');
+      if (segmentation.classList.contains('disabled')) segmentation.classList.remove('disabled');
+      if (report.classList.contains('disabled')) report.classList.remove('disabled');
+
+document.getElementById("MyElement").classList.toggle('MyClass');
     }
   }
 
