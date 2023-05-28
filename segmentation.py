@@ -57,7 +57,7 @@ def segmentation(images):
       n_components += 1 # (+1 component)
       print('\tTotal components:', n_components)
       components_indices[i].append(k) # append the current position (for example 0) since components are always first and the associated voids come after
-      print('Skipping', len(results[i][l]) + 1, 'steps')
+      print('\tSkipping', len(results[i][l]) + 1, 'steps')
       k += len(results[i][l]) + 1 # Just after selecting the good component, jump directly to 'current value + dictionary (of related voids) length + 1' on the current node to skip all the voids. Remember that the 'results' variable has an interesting structure, and that helps doing this
       l += 1
     print(components_indices[i], 'are the components on image', i)
@@ -65,7 +65,6 @@ def segmentation(images):
   # Generate the report directly, or a sub-report (actually we only store all the voids instead of calculating the metrics)
   print('Creating the report')
   report = {i: {k: {'component_area': 0, 'voids': [], 'void_pct': 0, 'max_void_pct': 0} for k in components_indices[i]} for i in range(len(images))}
-  print('Empty report:', report)
 
   if len(input) > 0:
     print('Inputs detected. Able to run SAM')  
@@ -76,11 +75,9 @@ def segmentation(images):
     for i, image in enumerate(images): # for each image
       print('\tMask on image', i)
       segmented_image = image.copy()
-      print('Mask shape', segmented_image.shape)
       h, w = image.shape[:2]
       opacity = np.ones((h, w, 1), dtype=np.uint8)
       segmented_image = np.concatenate([segmented_image, opacity], axis=2)
-      print('Mask shape', segmented_image.shape)
       
       if i not in skips:
         print('Image', i, 'not in skips. Calculating masks')
@@ -98,11 +95,8 @@ def segmentation(images):
             jj = components_indices[i][jj]
             report[i][jj]['voids'].append(mask.sum()) # Appending to the existing array
           mask = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
-          print('\tMask shape', mask.shape)
-          print('nMask:\n', sum(mask.sum(axis=2) > 0))
-          print('\nColors:\n', mask[mask.sum(axis=2) > 0])
-          segmented_image[mask.sum(axis=2) > 0] = mask[mask.sum(axis=2) > 0].copy()
-          print('\tSegmented image', segmented_image.shape)
+          segmented_image[mask.sum(axis=2) > 0] = mask.copy()[mask.sum(axis=2) > 0]
+          print('\nMask:\n', sum(mask.sum(axis=2) > 0), '\nsegmented image:\n', sum(segmented_image[mask.sum(axis=2) > 0]))
         
         for k in components_indices[i]:
           report[i][k]['void_pct'] = round(sum(report[i][k]['voids'])*100 / report[i][k]['component_area'], 2)
