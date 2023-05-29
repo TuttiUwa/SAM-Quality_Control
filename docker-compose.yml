@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  web: # application web service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sam
+    container_name: samApp
+    ports:
+      - "80:80"
+    command: ['python', 'app.py']
+
