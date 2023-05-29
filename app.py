@@ -1,15 +1,9 @@
-# file objective: This file contains all what is required to run predictions on the inputed image(s) in the app
-# It is dependent on SAM.py
-# function name is "area"
-# script owner: Tchako Bryan (PGE 4)
-# collaborator: Adetutu (PGE 5)
-# script date creation: 23/05/2023
-
 from flask import Flask, request, render_template
 import numpy as np
 from detection import detection
-from segmentation import segmentation # Not yet testes
-from report import report # Not yet created and implemented, but the segmentation function (if it works) provides all the materials 
+from segmentation import segmentation
+from report import report
+from all import all
 import cv2
 import base64
 
@@ -37,13 +31,17 @@ def predict():
     
     # Detection with YOLO
     if action == 'detection':
-      _, _, _, detections = detection(images)
+      labels = True if request.form.get('labels') else False
+      conf_level = True if request.form.get('conf_level') else False
+      font_size = int(request.form.get('font_size'))
+      line_width = int(request.form.get('line_width'))
+      _, _, _, detections = detection(images, labels=labels, conf_level=conf_level, font_size=font_size, line_width=line_width)
       detections = encoder(detections)
       return render_template('index.html', detections=detections)
     
     # Segmentation with SAM
     if action == 'segmentation':
-      _, masks = segmentation(images)
+      _, masks, _ = segmentation(images)
       masks = encoder(masks)
       return render_template('index.html', masks=masks)
     
@@ -51,6 +49,13 @@ def predict():
     if action == 'report':
       summary = report(images)
       return render_template('index.html', summary=summary)
+    
+    # All
+    if action == 'all':
+      (components, voids, results, detections), masks, summary = all(images)
+      detections = encoder(detections)
+      masks = encoder(masks)
+      return render_template('index.html', everything=[(components, voids, results, detections), masks, summary])
 
 # An encoder that turns numpy arrays into HTML-readable images
 def encoder(images):

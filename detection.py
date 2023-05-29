@@ -1,8 +1,6 @@
 from ultralytics import YOLO
-import cv2
-import base64
 
-def detection(images):
+def detection(images, labels=False, conf_level=False, font_size=8, line_width=1):
   # Loading the YOLO model
   model = YOLO('model/yolo.pt')
 
@@ -34,7 +32,7 @@ def detection(images):
   detections = []
   for image in images:
     # We used plot to have the predictions on the image directly. (in an advanced version of this project the user can change the values of the plot's params)
-    detection = model(image, classes=[0, 1])[0].plot(conf=True, line_width=1, font_size=12, labels=True)
+    detection = model(image, classes=[0, 1])[0].plot(labels=labels, conf_level=conf_level, font_size=font_size, line_width=line_width)
     detections.append(detection)
 
   return components, voids, results, detections
