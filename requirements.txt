@@ -45,3 +45,4 @@ urllib3==2.0.2
 Werkzeug
 zipp==3.15.0
 google-cloud-storage
+gunicorn==20.1.0
