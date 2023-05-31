@@ -35,8 +35,8 @@ seaborn==0.12.2
 segment-anything @ git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
 six==1.16.0
 sympy
-torch==2.0.1
-torchvision==0.15.2
+torch
+torchvision
 tqdm==4.65.0
 typing_extensions==4.6.2
 tzdata==2023.3
