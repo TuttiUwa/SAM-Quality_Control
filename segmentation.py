@@ -3,7 +3,19 @@ import numpy as np
 from segment_anything import sam_model_registry
 from segment_anything.utils.transforms import ResizeLongestSide
 import torch
+from google.cloud import storage
 
+#Provide service account key path
+storage_client = storage.Client.from_service_account_json('nth-rookery-387714-db6e97bdeb26.json')
+
+# Defining bucket credentials
+bucket_name = "samregistry"
+file_name = "sam_vit_h_4b8939.pth"
+
+# Accessing the file cloud storage
+bucket = storage_client.get_bucket(bucket_name)
+blob = bucket.blob(file_name)
+content = blob.download_to_filename(file_name)
 def segmentation(images):
   # Retrieving the detection output
   print('Retrieving the detection output')
@@ -11,7 +23,7 @@ def segmentation(images):
 
   # Preparing SAM
   print('Preparing SAM')
-  sam = sam_model_registry['default'](checkpoint='model/sam_vit_h_4b8939.pth')
+  sam = sam_model_registry['default'](checkpoint=content)
   resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
   def prepare_image(image, transform):
     image = transform.apply_image(image)
