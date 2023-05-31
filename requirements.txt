@@ -6,7 +6,7 @@ colorama==0.4.6
 contourpy
 cycler==0.11.0
 filelock==3.12.0
-Flask==2.3.2
+Flask
 fonttools==4.39.4
 git+https://github.com/huggingface/transformers.git
 idna==3.4
